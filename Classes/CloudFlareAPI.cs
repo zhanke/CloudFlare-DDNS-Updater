@@ -211,8 +211,18 @@ namespace CloudFlareDDNS
                 }
                 if (records == null || records == "error")
                     return null;
-
-                return jss.Deserialize<GetDnsRecordsResponse>(records);
+                try
+                {
+                   var drr = jss.Deserialize<GetDnsRecordsResponse>(records);
+                    if (drr != null) {
+                        return drr;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.log(records + ex.Message, Logger.Level.Error);
+                }
+                return null;
             }
             throw new Exception();
         }//end getCloudflareRecords()
