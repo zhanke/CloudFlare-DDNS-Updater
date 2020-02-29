@@ -375,21 +375,28 @@ namespace CloudFlareDDNS
         /// </summary>
         private void threadFetchOnly()
         {
-            Program.cloudFlareAPI.getExternalAddress();
-            this.Invoke(new updateAddressInvoker(updateAddress), Program.settingsManager.getSetting("ExternalAddressIPV4").ToString(), Program.settingsManager.getSetting("ExternalAddressIPV6").ToString());
-            if (!string.IsNullOrEmpty(Program.settingsManager.getSetting("SelectedZones").ToString()))
+            try
             {
-                List<Result> resultList = new List<Result>();
-                foreach (string SelectedZones in Program.settingsManager.getSetting("SelectedZones").ToString().Split(';'))
+                Program.cloudFlareAPI.getExternalAddress();
+                this.Invoke(new updateAddressInvoker(updateAddress), Program.settingsManager.getSetting("ExternalAddressIPV4").ToString(), Program.settingsManager.getSetting("ExternalAddressIPV6").ToString());
+                if (!string.IsNullOrEmpty(Program.settingsManager.getSetting("SelectedZones").ToString()))
                 {
+                    List<Result> resultList = new List<Result>();
+                    foreach (string SelectedZones in Program.settingsManager.getSetting("SelectedZones").ToString().Split(';'))
+                    {
 
-                    GetDnsRecordsResponse records = Program.cloudFlareAPI.getCloudFlareRecords(SelectedZones);
-                    records.result.All(x => { resultList.Add(x); return true; });
+                        GetDnsRecordsResponse records = Program.cloudFlareAPI.getCloudFlareRecords(SelectedZones);
+                        records.result.All(x => { resultList.Add(x); return true; });
+                    }
+                    if (resultList != null)
+                    {
+                        this.Invoke(new updateHostsListInvoker(updateHostsList), resultList);
+                    }
                 }
-                if (resultList != null)
-                {
-                    this.Invoke(new updateHostsListInvoker(updateHostsList), resultList);
-                }
+            }
+            catch (Exception ex)
+            {
+                Logger.log(ex.Message);
             }
         }//end threadFetchOnly()
 
